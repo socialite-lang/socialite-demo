@@ -54,7 +54,10 @@ print "Running Personalized PageRank algorithm on the similarity graph of doctor
 
 SRC=7
 
+# Retrieving the specialty of the SRC
 _, specialty, _, _ = `Doctor($SRC, specialty, _, _)`.next()
+
+# Retrieving the description of the specialty 
 _, specialty_descr = `Specialty($specialty, descr)`.next()
 print "Source doctor:", SRC, "with specialty:", specialty_descr
 
@@ -64,6 +67,7 @@ print "Source doctor:", SRC, "with specialty:", specialty_descr
 `Rank(int npi:0..$MAX_NPI_ID, int i:iter, double rank) groupby(2).`
 
 # Init PageRank values
+# For the neighbor nodes of the SRC, we initialize the PageRank value of the nodes to be 1/degree
 `Rank(npi, 0, r) :- DocNet($SRC, npi), EdgeCnt($SRC, cnt),  r = 1.0/cnt.`
 for i in range(50):
     # The first body is jump to the neighbor nodes of the source node (with probabality 0.2)
