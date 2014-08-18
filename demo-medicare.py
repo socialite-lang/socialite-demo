@@ -52,87 +52,111 @@ print "Reading hcpcs_code.txt"
 
 print "Running Personalized PageRank algorithm on the similarity graph of doctors"
 
-SRC=7
+alreadyPickedSpecialty=[]
+def pickSrc():
+    global alreadyPickedSpecialty
+    import random
+    while True:
+        npi = random.randint(0, MAX_NPI_ID)
 
-# Retrieving the specialty of the SRC
-_, specialty, _, _ = `Doctor($SRC, specialty, _, _)`.next()
-
-# Retrieving the description of the specialty 
-_, specialty_descr = `Specialty($specialty, descr)`.next()
-print "Source doctor:", SRC, "with specialty:", specialty_descr
-
-# Rank table stores PageRank values for doctors.
-# (doctor-id, iteration #, rank value)
-# The table only stores the values for the recent two iterations.
-`Rank(int npi:0..$MAX_NPI_ID, int i:iter, double rank) groupby(2).`
-
-# Init PageRank values
-# For the neighbor nodes of the SRC, we initialize the PageRank value of the nodes to be 1/degree
-`Rank(npi, 0, r) :- DocNet($SRC, npi), EdgeCnt($SRC, cnt),  r = 1.0/cnt.`
-for i in range(50):
-    # The first body is jump to the neighbor nodes of the source node (with probabality 0.2)
-    # The second body is random walk from one node to its neighbor nodes.
-    `Rank(n, $i+1, $sum(r)) :- DocNet($SRC, n), EdgeCnt($SRC, cnt), r=0.2*1.0/cnt; 
-                            :- Rank(s, $i, r1), EdgeCnt(s, cnt), DocNet(s, n), r = 0.8*r1/cnt.`
-
-# DocByRank stores the doctors (NPI) sorted by their PageRank value (descending order)
-`DocByRank(int i:0..0, (int npi:1024, double rank)) sortby rank desc.`
- DocByRank(0, npi, rank) :- Rank(npi, $i, rank).`
+        _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
+        if specialty in alreadyPickedSpecialty:
+            continue
+        total=0; same=0
+        for _, npi2 in `DocNet($npi, npi2)`:
+            total+=1
+            _, s2, _, _ = `Doctor($npi2, specialty, _, _)`.next()
+            if specialty==s2:
+                same+=1
+        if total > 20 and float(same)/total >= 0.79:
+            alreadyPickedSpecialty.append(specialty)   
+            return npi
 
 
-specialtyCount={}
-cluster=[]
-# We traverse the doctors in the descending order of their PageRank value
-# and add the doctors to the cluster.
-for _, npi, rank in `DocByRank(0, npi, rank)`:
-    cluster.append((npi, rank))
-    _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
-    try: specialtyCount[specialty] = specialtyCount[specialty]+1
-    except: specialtyCount[specialty] = 1
+for x in range(10):
+    SRC = pickSrc()
+    # Retrieving the specialty of the SRC
+    _, specialty, _, _ = `Doctor($SRC, specialty, _, _)`.next()
 
-    # we wait until the cluster size > 30
-    if len(cluster)<30: continue
-    # we keep adding the doctors as long as they have the same specialty
-    if len(specialtyCount) == 1: continue
+    # Retrieving the description of the specialty 
+    _, specialty_descr = `Specialty($specialty, descr)`.next()
+    print "Source doctor:", SRC, "with specialty:", specialty_descr
 
-    # we wait until there are a few different specialty in the cluster
-    majority=0
-    sum=0
+    # Rank table stores PageRank values for doctors.
+    # (doctor-id, iteration #, rank value)
+    # The table only stores the values for the recent two iterations.
+    `Rank(int npi:0..$MAX_NPI_ID, int i:iter, double rank) groupby(2).`
+
+    # Init PageRank values
+    # For the neighbor nodes of the SRC, we initialize the PageRank value of the nodes to be 1/degree
+    `Rank(npi, 0, r) :- DocNet($SRC, npi), EdgeCnt($SRC, cnt),  r = 1.0/cnt.`
+    for i in range(50):
+        # The first body is jump to the neighbor nodes of the source node (with probabality 0.2)
+        # The second body is random walk from one node to its neighbor nodes.
+        `Rank(n, $i+1, $sum(r)) :- DocNet($SRC, n), EdgeCnt($SRC, cnt), r=0.2*1.0/cnt; 
+                                :- Rank(s, $i, r1), EdgeCnt(s, cnt), DocNet(s, n), r = 0.8*r1/cnt.`
+
+    # DocByRank stores the doctors (NPI) sorted by their PageRank value (descending order)
+    `DocByRank(int i:0..0, (int npi:1024, double rank)) sortby rank desc.
+     DocByRank(0, npi, rank) :- Rank(npi, $i, rank).`
+
+
+    specialtyCount={}
+    cluster=[]
+    # We traverse the doctors in the descending order of their PageRank value
+    # and add the doctors to the cluster.
+    for _, npi, rank in `DocByRank(0, npi, rank)`:
+        cluster.append((npi, rank))
+        _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
+        try: specialtyCount[specialty] = specialtyCount[specialty]+1
+        except: specialtyCount[specialty] = 1
+
+        # we wait until the cluster size > 30
+        if len(cluster)<30: continue
+        # we keep adding the doctors as long as they have the same specialty
+        if len(specialtyCount) == 1: continue
+
+        # we wait until there are a few different specialty in the cluster
+        majority=0
+        sum=0
+        for k,v in specialtyCount.items():
+            if v>majority: majority = v
+            sum+=v
+        if float(majority)/sum > 0.9: continue
+        if sum-majority > 10:break
+
+
+    print "Cluster size:", len(cluster)
+    print "-----------------------------"
+    for specialty, cnt in specialtyCount.items():
+        _, descr = `Specialty($specialty, descr)`.next()
+        print descr, ":", cnt
+    print "-----------------------------"
+
+    clusterSpecialty = None
     for k,v in specialtyCount.items():
-        if v>majority: majority = v
-        sum+=v
-    if float(majority)/sum > 0.9: continue
-    if sum-majority > 10:break
+        if v==majority:
+            clusterSpecialty = k
 
+    # we print a couple of doctors having specialty that is different from the rest doctors in the cluster
+    print "Anomalies:"
+    count=0
+    for npi, rank in cluster:
+        _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
+        if specialty == clusterSpecialty:
+            continue
 
-print "Cluster size:", len(cluster)
-print "-----------------------------"
-for specialty, cnt in specialtyCount.items():
-    _, descr = `Specialty($specialty, descr)`.next()
-    print descr, ":", cnt
-print "-----------------------------"
+        print "\tNPI:", npi, "Rank:", rank
+        _, descr = `Specialty($specialty, descr)`.next()
+        print "\tSpecialty:", descr
+        for _, specialty, code, freq in `Doctor($npi, specialty, code, freq)`:
+            _, descr = `Code($code, descr)`.next()
+            print "\t  ", descr, ":", freq
 
-clusterSpecialty = None
-for k,v in specialtyCount.items():
-    if v==majority:
-        clusterSpecialty = k
+        count+=1
+        if count==5: break
 
-# we print a couple of doctors having specialty that is different from the rest doctors in the cluster
-print "Anomalies:"
-count=0
-for npi, rank in cluster:
-    _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
-    if specialty == clusterSpecialty:
-        continue
+    print "-----------------------------\n"
 
-    print "\tNPI:", npi, "Rank:", rank
-    _, descr = `Specialty($specialty, descr)`.next()
-    print "\tSpecialty:", descr
-    for _, specialty, code, freq in `Doctor($npi, specialty, code, freq)`:
-        _, descr = `Code($code, descr)`.next()
-        print "\t  ", descr, ":", freq
-
-    count+=1
-    if count==5: break
-
-print "-----------------------------\n"
+    `clear Rank.
+     clear DocByRank.`
