@@ -1,0 +1,89 @@
+Radiation Oncology	0
+Hand Surgery	1
+Orthopedic Surgery	2
+Osteopathic Manipulative Medicine	3
+Certified Clinical Nurse Specialist	4
+Mass Immunization Roster Biller	5
+Audiologist (billing independently)	6
+Pain Management	7
+Physical Therapist	8
+Cardiac Surgery	9
+Addiction Medicine	10
+Thoracic Surgery	11
+Vascular Surgery	12
+Optometry	13
+Colorectal Surgery (formerly proctology)	14
+Clinical Laboratory	15
+CRNA	16
+Unknown Physician Specialty Code	17
+Emergency Medicine	18
+Anesthesiologist Assistants	19
+Occupational therapist	20
+Cardiology	21
+Anesthesiology	22
+Multispecialty Clinic/Group Practice	23
+Critical Care (Intensivists)	24
+Hospice and Palliative Care	25
+General Surgery	26
+Ophthalmology	27
+Surgical Oncology	28
+Ambulance Service Supplier	29
+Otolaryngology	30
+Clinical Psychologist	31
+All Other Suppliers	32
+Plastic and Reconstructive Surgery	33
+Cardiac Electrophysiology	34
+Physician Assistant	35
+Neurosurgery	36
+Peripheral Vascular Disease	37
+Geriatric Psychiatry	38
+Independent Diagnostic Testing Facility	39
+Preventive Medicine	40
+Geriatric Medicine	41
+Maxillofacial Surgery	42
+Interventional Radiology	43
+Neurology	44
+Ambulatory Surgical Center	45
+Nuclear Medicine	46
+Infectious Disease	47
+Radiation Therapy	48
+Oral Surgery (dentists only)	49
+Pediatric Medicine	50
+Internal Medicine	51
+Certified Nurse Midwife	52
+Pathology	53
+Licensed Clinical Social Worker	54
+Nurse Practitioner	55
+Neuropsychiatry	56
+Endocrinology	57
+Slide Preparation Facility	58
+Urology	59
+Diagnostic Radiology	60
+Rheumatology	61
+Portable X-ray	62
+Obstetrics/Gynecology	63
+Medical Oncology	64
+Mammographic Screening Center	65
+Gastroenterology	66
+Sleep Medicine	67
+Podiatry	68
+Hematology	69
+Unknown Supplier/Provider	70
+Gynecological/Oncology	71
+Public Health Welfare Agency	72
+Psychiatry	73
+Physical Medicine and Rehabilitation	74
+Pharmacy	75
+Allergy/Immunology	76
+Interventional Pain Management	77
+Hematology/Oncology	78
+General Practice	79
+Registered Dietician/Nutrition Professional	80
+Dermatology	81
+Family Practice	82
+Chiropractic	83
+Psychologist (billing independently)	84
+Speech Language Pathologist	85
+Sports Medicine	86
+Pulmonary Disease	87
+Nephrology	88
