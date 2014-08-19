@@ -42,11 +42,11 @@ print "Reading specialty.txt"
                            (descr, _spec) = $split(l, "\t"),
                            spec=$toInt(_spec).`
 
-print "Reading hcpcs_code.txt"
+print "Reading hcpcs-code.txt"
 # hcpcs_code.txt: cpt-code id <tab> description
 # Specialty table maps specialty id to its description.
 `Code(int code:0..$MAX_HCPCS_CODE_ID, String descr).
- Code(code, descr) :- l=$read("data/hcpcs_code.txt"), 
+ Code(code, descr) :- l=$read("data/hcpcs-code.txt"), 
                            (_, descr, _code) = $split(l, "\t"),
                            code = $toInt(_code).`
 
