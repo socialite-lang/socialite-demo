@@ -95,7 +95,7 @@ for SRC in src:
         # The first body is jump to the neighbor nodes of the source node (with probabality 0.2)
         # The second body is random walk from one node to its neighbor nodes.
         `Rank(n, $i+1, $sum(r)) :- DocNet($SRC, n), EdgeCnt($SRC, cnt), r=0.2f*1.0f/cnt; 
-                                :- Rank(s, $i, r1), EdgeCnt(s, cnt), DocNet(s, n), r = 0.8f*r1/cnt.`
+                                :- Rank(s, $i, r1), EdgeCnt(s, cnt), r = 0.8f*r1/cnt, r>0.0000001, DocNet(s, n).`
         sys.stdout.write("..")
         sys.stdout.flush()
     print
@@ -171,3 +171,5 @@ for SRC in src:
 
     `clear Rank.
      clear DocByRank.`
+
+sys.exit(0)
