@@ -71,7 +71,7 @@ def REAL_pickSrc():
         if total > 20 and float(same)/total >= 0.79:
             yield npi
 
-src = pickSrc()
+src = REAL_pickSrc()
 for SRC in src:
     # Retrieving the specialty of the SRC
     _, specialty, _, _ = `Doctor($SRC, specialty, _, _)`.next()
