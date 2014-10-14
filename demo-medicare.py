@@ -1,4 +1,5 @@
 import time
+import sys
 
 MAX_NPI_ID = 880643
 MAX_HCPCS_CODE_ID = 5948
@@ -50,18 +51,17 @@ print "Reading hcpcs-code.txt"
                            (_, descr, _code) = $split(l, "\t"),
                            code = $toInt(_code).`
 
-print "Running Personalized PageRank algorithm on the similarity graph of doctors"
-
-alreadyPickedSpecialty=[]
 def pickSrc():
-    global alreadyPickedSpecialty
+    #for s in [374409, 731884, 429817, 307369, 182465, 439422, 553886, 559380, 384141, 146989]:
+    for s in [136632, 325275, 366319, 379090, 481917, 254858, 448461, 815125, 496378, 391998]:
+        yield s
+
+def REAL_pickSrc():
     import random
     while True:
         npi = random.randint(0, MAX_NPI_ID)
 
         _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
-        if specialty in alreadyPickedSpecialty:
-            continue
         total=0; same=0
         for _, npi2 in `DocNet($npi, npi2)`:
             total+=1
@@ -69,37 +69,44 @@ def pickSrc():
             if specialty==s2:
                 same+=1
         if total > 20 and float(same)/total >= 0.79:
-            alreadyPickedSpecialty.append(specialty)   
-            return npi
+            yield npi
 
-
-for x in range(10):
-    SRC = pickSrc()
+src = pickSrc()
+for SRC in src:
     # Retrieving the specialty of the SRC
     _, specialty, _, _ = `Doctor($SRC, specialty, _, _)`.next()
 
     # Retrieving the description of the specialty 
     _, specialty_descr = `Specialty($specialty, descr)`.next()
-    print "Source doctor:", SRC, "with specialty:", specialty_descr
+    print "Source node: %d(%s)"%(SRC, specialty_descr)
+
+    print "Running Personalized PageRank..."
 
     # Rank table stores PageRank values for doctors.
     # (doctor-id, iteration #, rank value)
     # The table only stores the values for the recent two iterations.
-    `Rank(int npi:0..$MAX_NPI_ID, int i:iter, double rank) groupby(2).`
+    `Rank(int npi:0..$MAX_NPI_ID, int i:iter, float rank) groupby(2).`
+    sys.stdout.write("..")
 
     # Init PageRank values
     # For the neighbor nodes of the SRC, we initialize the PageRank value of the nodes to be 1/degree
-    `Rank(npi, 0, r) :- DocNet($SRC, npi), EdgeCnt($SRC, cnt),  r = 1.0/cnt.`
-    for i in range(50):
+    `Rank(npi, 0, r) :- DocNet($SRC, npi), EdgeCnt($SRC, cnt),  r = 1.0f/cnt.`
+    for i in range(20):
         # The first body is jump to the neighbor nodes of the source node (with probabality 0.2)
         # The second body is random walk from one node to its neighbor nodes.
-        `Rank(n, $i+1, $sum(r)) :- DocNet($SRC, n), EdgeCnt($SRC, cnt), r=0.2*1.0/cnt; 
-                                :- Rank(s, $i, r1), EdgeCnt(s, cnt), DocNet(s, n), r = 0.8*r1/cnt.`
-
+        `Rank(n, $i+1, $sum(r)) :- DocNet($SRC, n), EdgeCnt($SRC, cnt), r=0.2f*1.0f/cnt; 
+                                :- Rank(s, $i, r1), EdgeCnt(s, cnt), DocNet(s, n), r = 0.8f*r1/cnt.`
+        sys.stdout.write("..")
+        sys.stdout.flush()
+    print
     # DocByRank stores the doctors (NPI) sorted by their PageRank value (descending order)
-    `DocByRank(int i:0..0, (int npi:1024, double rank)) sortby rank desc.
-     DocByRank(0, npi, rank) :- Rank(npi, $i, rank).`
+    `MaxRank(int i:0..0, float rank) groupby(1).
+     MaxRank(0, $max(rank)) :- Rank(npi, $i, rank).`
+    _, maxRank = `MaxRank(0, rank)`.next()
+    threshold = maxRank*0.001
 
+    `DocByRank(int i:0..0, (int npi:4096, float rank)) sortby rank desc.
+     DocByRank(0, npi, rank) :- Rank(npi, $i, rank), rank>$threshold.`
 
     specialtyCount={}
     cluster=[]
@@ -126,12 +133,16 @@ for x in range(10):
         if sum-majority > 10:break
 
 
-    print "Cluster size:", len(cluster)
-    print "-----------------------------"
+    print "+------------------------------------------+"
+    print "Cluster of ", specialty_descr
+    print "  Source NPI:", SRC
+
+
+    print "  Cluster size:", len(cluster)
+    print "  Specialty distributions:"
     for specialty, cnt in specialtyCount.items():
         _, descr = `Specialty($specialty, descr)`.next()
-        print descr, ":", cnt
-    print "-----------------------------"
+        print "    %s:%d"%(descr, cnt)
 
     clusterSpecialty = None
     for k,v in specialtyCount.items():
@@ -139,16 +150,16 @@ for x in range(10):
             clusterSpecialty = k
 
     # we print a couple of doctors having specialty that is different from the rest doctors in the cluster
-    print "Anomalies:"
+    print "  Anomaly Candidates:"
     count=0
     for npi, rank in cluster:
         _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
         if specialty == clusterSpecialty:
             continue
 
-        print "\tNPI:", npi, "Rank:", rank
+        print "  %d.NPI:%s Rank:%f"%(count+1, npi, rank)
         _, descr = `Specialty($specialty, descr)`.next()
-        print "\tSpecialty:", descr
+        print "    Specialty:", descr
         for _, specialty, code, freq in `Doctor($npi, specialty, code, freq)`:
             _, descr = `Code($code, descr)`.next()
             print "\t  ", descr, ":", freq
