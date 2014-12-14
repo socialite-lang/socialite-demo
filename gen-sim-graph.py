@@ -12,7 +12,7 @@ MAX_HCPCS_CODE_ID = 5948
 
 # This table stores CPT code id to its description
 `CptCode(int code:0..$MAX_NPI_ID, String descr).
- CptCode(code, descr) :- l=$read("data/hcpcs_code.txt"),
+ CptCode(code, descr) :- l=$read("data/hcpcs-code.txt"),
                          (_, descr, codeStr)=$split(l, "\t"),
                          code=$toInt(codeStr).`
 
