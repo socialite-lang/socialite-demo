@@ -84,18 +84,15 @@ for i in range(len(specialties)):
 
     # Init PageRank values
     # For the neighbor nodes of the SRC, we initialize the PageRank value of the nodes to be 1/degree
-    `DiffSum(int x:0..0, float s) groupby(1).`
+    #`DiffSum(int x:0..0, float s) groupby(1).`
 
     `Rank(npi, 0, $sum(r)) :- Seed(seed), EdgeCnt(seed, cnt),  r = 1.0f/$N/cnt, Graph(seed, npi).`
-    for i in range(30):
-        # The first body is jump to the neighbor nodes of the source node (with probabality 0.2)
+    for i in range(10):
+        # The first body (till semi-colon) is the random jump to the neighbor nodes of the source nodes (with probabality 0.2)
         # The second body is random walk from one node to its neighbor nodes.
-        #`Rank(n, $i+1, $sum(r)) :- Seed(npi), EdgeCnt(npi, cnt), r=0.2f*1.0f/$N/cnt, Graph(npi, n) ; 
-        #                        :- Rank(s, $i, r1), EdgeCnt(s, cnt), r = 0.8f*r1/cnt, Graph(s, n).`
-
         `Rank(n, $i+1, $sum(r)) :- Seed(npi), EdgeCnt(npi, cnt), r=0.2f*1.0f/$N/cnt, Graph(npi, n) ; 
-                            :- Graph(n, s), Rank(s, $i, r1), r1 > 0.00000001f, EdgeCnt(s, cnt), r = 0.8f*r1/cnt.`
-
+                        :- Graph(n, s), Rank(s, $i, r1), r1 > 0.00000001f, EdgeCnt(s, cnt), r = 0.8f*r1/cnt.`
+        #`DiffSum(0, $sum(r)) :- Rank(n, $i, r1), Rank(n, $i+1, r2), r=(r1-r2)*(r1-r2).`
         sys.stdout.write("..")
         sys.stdout.flush()
     print
