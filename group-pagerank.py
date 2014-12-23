@@ -19,7 +19,7 @@ specialtyDescrs = ["Ophthalmology", "Otolaryngology", "Gastroenterology", "Oral 
                    "Rheumatology", "Obstetrics/Gynecology", "Podiatry", "Hematology",
                    "Gynecological/Oncology", "Psychiatry", "Allergy/Immunology", "Hematology/Oncology",
                    "Anesthesiology", "Pulmonary Disease", "Nephrology"]
-specialtyDescrs = specialtyDescrs[:5]
+#specialtyDescrs = specialtyDescrs[:5]
 for descr in specialtyDescrs:
     num, _ = `Specialty(num, $descr)`.next()
     specialties.append(num)
@@ -39,7 +39,7 @@ s = time.time()
                         npi2=$toInt(_npi2). 
 
  Graph(npi2, npi1) :- Graph(npi1, npi2). `
-print "Loading time:%.2f sec."%(time.time()-s)
+#print "Loading time:%.2f sec."%(time.time()-s)
  
 `EdgeCnt(int npi:0..$MAX_NPI_ID, int cnt).
  EdgeCnt(npi, $inc(1)) :- Graph(npi, npi2).`
@@ -83,7 +83,7 @@ for i in range(len(specialties)):
     # (doctor-id, iteration #, rank value)
     # The table only stores the values for the recent two iterations.
     `Rank(int npi:0..$MAX_NPI_ID, int i:iter, float rank) groupby(2).`
-    sys.stdout.write("..")
+    #sys.stdout.write("..")
 
     # Init PageRank values
     # For the neighbor nodes of the SRC, we initialize the PageRank value of the nodes to be 1/degree
@@ -94,7 +94,7 @@ for i in range(len(specialties)):
         # The first body (till semi-colon) is the random jump to the neighbor nodes of the source nodes (with probabality 0.2)
         # The second body is random walk from one node to its neighbor nodes.
         `Rank(n, $i+1, $sum(r)) :- Seed(npi), EdgeCnt(npi, cnt), r=0.2f*1.0f/$N/cnt, Graph(npi, n) ; 
-                        :- Graph(n, s), Rank(s, $i, r1), r1 > 0.0000001f, EdgeCnt(s, cnt), r = 0.8f*r1/cnt.`
+                        :- Graph(n, s), Rank(s, $i, r1), EdgeCnt(s, cnt), r = 0.8f*r1/cnt.`
         #`DiffSum(0, $sum(r)) :- Rank(n, $i, r1), Rank(n, $i+1, r2), r=(r1-r2)*(r1-r2).`
         sys.stdout.write("..")
         sys.stdout.flush()
@@ -114,7 +114,7 @@ for i in range(len(specialties)):
     # Candidates stores the doctors (NPI) sorted by their PageRank value (descending order)
     `AnomalyCandidate(int npi, float rank) multiset.
      AnomalyCandidate(npi, rank) :- Rank(npi, $i, rank), Doctor(npi, specialty, _, _),
-                                specialty != $specialty, rank>$threshold.`
+                                specialty != $specialty, rank>=$threshold.`
 
     # We sort anomalies by their PageRank values
     anomalies=[]
@@ -122,39 +122,45 @@ for i in range(len(specialties)):
     for npi, rank in `AnomalyCandidate(npi, rank)`:
         heappush(anomalies, (1-rank, npi))   
 
-    # and pick 100 anomalies with high PageRank values
-    top100anomalies = []
+    # and pick top anomaly candidates with high PageRank values
+    topAnomalies = []
     while anomalies:
         priority, npi = heappop(anomalies)
         rank = 1-priority
-        top100anomalies.append((npi, rank))
-        if len(top100anomalies) == 100:
+        topAnomalies.append((npi, rank))
+        if len(topAnomalies) > 1000:
             break
 
-    # then we find false-positives. 
-    # Specialties occuring more than threshold(5 times) are considered false-positive.
+    # then we find (what we consider) false-positives. 
+    # Specialties occuring more than threshold are considered false-positive.
     specialtyCount={}
     falsePositives=set()
-    for npi, rank in top100anomalies:
+    # We also exclude too general specialties
+    falsePositives.add(22) # Physician Assistant
+    falsePositives.add(55) # Family Practice
+    falsePositives.add(68) # Nurse Practitioner 
+    for npi, rank in topAnomalies:
         _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
         try: specialtyCount[specialty] += 1
         except: specialtyCount[specialty] = 1
-        if specialtyCount[specialty] > 5:
+        if specialtyCount[specialty] > 20:
             falsePositives.add(specialty)
 
     print "+------------------------------------------+"
-    print "  Anomaly analysis with specialty ", specialty_descr
-    print "    Max PageRank value:", maxRank
-    print "    Some of unexpected specialties having high PageRank values:"
+    print " Anomaly analysis with specialty ", specialty_descr
+    print "   Max PageRank value:", maxRank
+    print "   Some of unexpected specialties having high PageRank values:"
     for specialty, cnt in specialtyCount.items():
+        if specialty in falsePositives:
+            continue
         _, descr = `Specialty($specialty, descr)`.next()
         print "     %s:%d"%(descr, cnt)
 
     # we print a couple of doctors having specialty that is different from the rest doctors in the cluster
-    print "    Top Anomalies:"
-    anomalyCount=0
-    while top100anomalies:
-        npi, rank = top100anomalies.pop(0)
+    print "   Top Anomalies:"
+    anomalyCount = 0
+    while topAnomalies:
+        npi, rank = topAnomalies.pop(0)
         _, specialty, _, _ = `Doctor($npi, specialty, _, _)`.next()
         if specialty == clusterSpecialty:
             continue
