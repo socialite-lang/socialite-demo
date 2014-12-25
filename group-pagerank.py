@@ -70,7 +70,7 @@ print "Reading hcpcs-code.txt"
 for i in range(len(specialties)):
     clusterSpecialty = specialty = specialties[i]
     specialty_descr = specialtyDescrs[i]
-    print "Running Group PageRank..."
+    print "Running Group PageRank... (source specialty:"+specialty_descr+")"
 
     `Seed(int npi) indexby npi.
      Seed(npi) :- Doctor(npi, specialty, _, _), specialty==$specialty.`
@@ -157,7 +157,7 @@ for i in range(len(specialties)):
         print "     %s:%d"%(descr, cnt)
 
     # we print a couple of doctors having specialty that is different from the rest doctors in the cluster
-    print "   Top Anomalies:"
+    print "   Top 5 Anomalies:"
     anomalyCount = 0
     while topAnomalies:
         npi, rank = topAnomalies.pop(0)
@@ -174,7 +174,7 @@ for i in range(len(specialties)):
             print "\t  ", descr, ":", freq
 
         anomalyCount += 1
-        if anomalyCount==10: break
+        if anomalyCount==5: break
 
     print "-----------------------------\n"
     specialtyCount.clear()
